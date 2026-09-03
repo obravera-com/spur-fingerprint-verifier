@@ -1,0 +1,89 @@
+{
+  "scheme_id": "iscc-content-text",
+  "scheme_version": "1.0",
+  "default_threshold": 0.85,
+  "source_note": "All source texts are original, written for these fixtures about fictional places and people, and released under CC0-1.0. Two stories share a topic (coastal works) so that negatives are not trivially distinguishable by vocabulary.",
+  "vectors": [
+    {
+      "id": "identical-01",
+      "class": "identical",
+      "reference": "sources/ref-harbour-01.txt",
+      "candidate": "sources/ref-harbour-01.txt",
+      "expected_verdict": "match",
+      "licence": "CC0-1.0",
+      "notes": "Positive control.",
+      "expected_score": 1.0
+    },
+    {
+      "id": "near-above-light-edit",
+      "class": "near_duplicate_above",
+      "reference": "sources/ref-harbour-01.txt",
+      "candidate": "sources/cand-harbour-light-edit.txt",
+      "expected_verdict": "match",
+      "licence": "CC0-1.0",
+      "notes": "Oxford comma, '1 October' for 'the first of October', '\u00a34.2m' for 'four point two million', 'about' for 'around'. Typical sub-editing.",
+      "expected_score": 0.9844
+    },
+    {
+      "id": "near-below-rewrite",
+      "class": "near_duplicate_below",
+      "reference": "sources/ref-harbour-01.txt",
+      "candidate": "sources/cand-harbour-rewrite.txt",
+      "expected_verdict": "no_match",
+      "licence": "CC0-1.0",
+      "notes": "A condensed rewrite that keeps names, figures and a few phrases. Below threshold by design; the boundary case two verifiers must agree on.",
+      "expected_score": 0.4531
+    },
+    {
+      "id": "near-below-excerpt-as-document",
+      "class": "near_duplicate_below",
+      "reference": "sources/ref-harbour-01.txt",
+      "candidate": "sources/cand-harbour-excerpt-p2.txt",
+      "expected_verdict": "no_match",
+      "licence": "CC0-1.0",
+      "notes": "One paragraph of the reference compared at document unit. Falls well below threshold: this is why block unit exists. See version-block-excerpt.",
+      "expected_score": 0.6094
+    },
+    {
+      "id": "version-document",
+      "class": "version_redaction",
+      "reference": "sources/ref-harbour-01.txt",
+      "candidate": "sources/cand-harbour-v2.txt",
+      "expected_verdict": "no_match",
+      "licence": "CC0-1.0",
+      "notes": "Later version: sentence appended to paragraph 1, paragraph 4 removed, new paragraph inserted. At document unit the score moves below threshold. Expected behaviour, not a failure; the same article updated is a different document to a document-level code.",
+      "expected_score": 0.7812
+    },
+    {
+      "id": "version-block-excerpt",
+      "class": "version_redaction",
+      "unit": "block",
+      "reference": "sources/ref-harbour-01.txt",
+      "candidate": "sources/cand-harbour-excerpt-p2.txt",
+      "expected_verdict": "match",
+      "licence": "CC0-1.0",
+      "notes": "Lightly edited paragraph 2 matched against the best reference block. Block-level correlation persists where the document-level score does not.",
+      "expected_score": 0.9688
+    },
+    {
+      "id": "negative-unrelated",
+      "class": "negative_unrelated",
+      "reference": "sources/ref-harbour-01.txt",
+      "candidate": "sources/neg-harbour-unrelated.txt",
+      "expected_verdict": "no_match",
+      "licence": "CC0-1.0",
+      "notes": "Different story, same topic and length. Note the score sits near 0.5, which is the expected value for unrelated 64-bit codes; scores in the 0.4 to 0.6 band carry no information.",
+      "expected_score": 0.5156
+    },
+    {
+      "id": "negative-known-defeat-paraphrase",
+      "class": "negative_known_defeat",
+      "reference": "sources/ref-harbour-01.txt",
+      "candidate": "sources/neg-harbour-paraphrase.txt",
+      "expected_verdict": "no_match",
+      "licence": "CC0-1.0",
+      "notes": "Full paraphrase preserving every fact. Listed in the scheme's known_defeats; the fixture documents that a no_match here is expected and is not evidence of non-use.",
+      "expected_score": 0.5312
+    }
+  ]
+}

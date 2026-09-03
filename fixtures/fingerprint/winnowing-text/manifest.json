@@ -1,0 +1,68 @@
+{
+  "scheme_id": "winnowing-text",
+  "scheme_version": "1.0-k25w4",
+  "default_threshold": 0.5,
+  "source_note": "Shares source texts with iscc-content-text. CC0-1.0.",
+  "vectors": [
+    {
+      "id": "identical-01",
+      "class": "identical",
+      "reference": "../iscc-content-text/sources/ref-harbour-01.txt",
+      "candidate": "../iscc-content-text/sources/ref-harbour-01.txt",
+      "expected_verdict": "match",
+      "licence": "CC0-1.0",
+      "notes": "Positive control.",
+      "expected_score": 1.0
+    },
+    {
+      "id": "near-above-light-edit",
+      "class": "near_duplicate_above",
+      "reference": "../iscc-content-text/sources/ref-harbour-01.txt",
+      "candidate": "../iscc-content-text/sources/cand-harbour-light-edit.txt",
+      "expected_verdict": "match",
+      "licence": "CC0-1.0",
+      "notes": "Jaccard on selected k-grams penalises each local edit; still comfortably above 0.5.",
+      "expected_score": 0.858
+    },
+    {
+      "id": "near-below-rewrite",
+      "class": "near_duplicate_below",
+      "reference": "../iscc-content-text/sources/ref-harbour-01.txt",
+      "candidate": "../iscc-content-text/sources/cand-harbour-rewrite.txt",
+      "expected_verdict": "no_match",
+      "licence": "CC0-1.0",
+      "notes": "Near zero: winnowing sees almost no shared 25-character runs in a rewrite.",
+      "expected_score": 0.0013
+    },
+    {
+      "id": "version-document",
+      "class": "version_redaction",
+      "reference": "../iscc-content-text/sources/ref-harbour-01.txt",
+      "candidate": "../iscc-content-text/sources/cand-harbour-v2.txt",
+      "expected_verdict": "match",
+      "licence": "CC0-1.0",
+      "notes": "Unlike the ISCC document code, local fingerprints keep the unchanged paragraphs' overlap, so the updated version still matches at document unit. This is the complementary behaviour the profile should show side by side.",
+      "expected_score": 0.6473
+    },
+    {
+      "id": "negative-unrelated",
+      "class": "negative_unrelated",
+      "reference": "../iscc-content-text/sources/ref-harbour-01.txt",
+      "candidate": "../iscc-content-text/sources/neg-harbour-unrelated.txt",
+      "expected_verdict": "no_match",
+      "licence": "CC0-1.0",
+      "notes": "Zero overlap.",
+      "expected_score": 0.0
+    },
+    {
+      "id": "negative-known-defeat-paraphrase",
+      "class": "negative_known_defeat",
+      "reference": "../iscc-content-text/sources/ref-harbour-01.txt",
+      "candidate": "../iscc-content-text/sources/neg-harbour-paraphrase.txt",
+      "expected_verdict": "no_match",
+      "licence": "CC0-1.0",
+      "notes": "Zero overlap; paraphrase defeats winnowing completely.",
+      "expected_score": 0.0
+    }
+  ]
+}

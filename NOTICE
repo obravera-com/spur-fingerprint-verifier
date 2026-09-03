@@ -1,0 +1,10 @@
+spur-fingerprint-verifier
+Copyright 2026 Brady Ridgway / ObraVera
+
+This product includes software developed for the SPUR Coalition evidence
+profile working group. It is not endorsed by or affiliated with the SPUR
+Coalition. Fixture source material is released under CC0-1.0 (see
+fixtures/*/manifest.json).
+
+ISCC codes are computed with iscc-core (Apache-2.0), the reference
+implementation of ISO 24138.
