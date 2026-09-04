@@ -10,7 +10,7 @@ Owner: Brady Ridgway (@RedHorseMane on GitHub), founder of ObraVera. The GitHub 
 
 ## Non-negotiables
 
-1. **Boundary rule** (working-group charter): access evidence never becomes proof of grounding, and cryptographic validity never becomes factual truth, completeness or entitlement. The only proposition a `fingerprint_match` record may carry is `similarity_only`. `tests/test_boundary.py` enforces this; never weaken it, and never add fields such as `grounded`, `entitlement`, `owner`, `licensed` to the record.
+1. **Boundary rule** (working-group charter): access evidence never becomes proof of grounding, and cryptographic validity never becomes factual truth, completeness or entitlement. The only proposition a `fingerprint_match` record may carry is `similarity_only`, and the record carries `score` and `threshold` but no verdict — the verdict is the consumer's conclusion, computed by the CLI and runner for display only. `tests/test_boundary.py` and `verify.validate_record()` enforce this; never weaken them, and never add fields such as `verdict`, `grounded`, `entitlement`, `owner`, `licensed` to the record.
 2. **No core wire-format changes.** This code reads `content_id`, `content_url`, `content_telemetry_id`, `session_id` as the standard defines them and adds nothing to any event. Anything that needs a core hook is a proposal against the standard, not a change here.
 3. **Clean-checkout reproducibility.** The only runtime dependency is `iscc-core`, pinned exactly. No network, no service, no ledger, no private ObraVera code. If a change needs anything else, stop and discuss.
 4. **Recompute, never trust.** Fingerprints in manifests are recomputed on every run. `expected_score` pins are produced only by `tools/pin_expected_scores.py`; re-pin deliberately and review the diff.
@@ -45,4 +45,4 @@ python tools/make_binary_fixtures.py && git diff --exit-code -- fixtures/fingerp
 - First PR to the working group: profile text, registry table, `fingerprint_match` schema, `iscc-content-text` and `iscc-data` fixtures. Done here; needs porting to the working-group repo's layout once its structure is known.
 - Second release: `iscc-content-audio`; align fixture corpus with @erik-sv (cross-evidence interoperability) and @jchomat (C2PA survivability).
 - A second, independently implemented verifier from another party is required before the module can be marked stable. Do not write it in this repo.
-- Open questions the group has not settled: normative vs recommended thresholds; container for records; `unit_ref` convention for blocks; registry resolution (standard issue #17).
+- Open questions the group has not settled: normative vs recommended thresholds; whether the proposed `data.evidence` entry convention (core §6.8) is accepted as drafted; `unit_ref` convention for blocks; registry resolution (standard issue #17).

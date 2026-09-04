@@ -37,7 +37,14 @@ def _cmd_match(args: argparse.Namespace) -> int:
         reference={"content_id": args.content_id, "content_url": args.content_url, "registrar": args.registrar},
         candidate={"source_kind": args.source_kind},
     )
+    problems = verify.validate_record(record)
+    if problems:  # a bug in this verifier, not in the inputs
+        for p in problems:
+            print(f"invalid record: {p}", file=sys.stderr)
+        return 1
     print(json.dumps(record, indent=2))
+    # The verdict is display only; it is deliberately not part of the record.
+    print(f"verdict: {result.verdict} (score {result.score}, threshold {result.threshold})", file=sys.stderr)
     return 0
 
 

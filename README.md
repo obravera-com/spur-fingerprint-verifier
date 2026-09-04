@@ -6,7 +6,7 @@ Status: draft, tracking the module proposal on the evidence working-group tracke
 
 ## What this does
 
-Given a registered reference item and a candidate (an AI output, a document from a disclosed corpus, an item from a retrieval log), the verifier recomputes both fingerprints under a named scheme and emits a `fingerprint_match` evidence record carrying a score, the threshold applied, and a verdict.
+Given a registered reference item and a candidate (an AI output, a document from a disclosed corpus, an item from a retrieval log), the verifier recomputes both fingerprints under a named scheme and emits a `fingerprint_match` evidence record carrying a score and the threshold applied. The record carries no verdict: whether a score constitutes a match is the consumer's conclusion under their trust policy, which the CLI and fixture runner compute for display but do not embed in the record.
 
 The record supports exactly one proposition, `similarity_only`: *under this scheme, this candidate resembles this reference to this degree.* It does not claim grounding, access, completeness, entitlement or truth. `tests/test_boundary.py` checks that the record schema cannot carry such claims.
 

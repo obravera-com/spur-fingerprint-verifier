@@ -5,7 +5,6 @@ from pathlib import Path
 from spur_fingerprint_verifier import verify
 
 SRC = Path(__file__).resolve().parent.parent / "fixtures/fingerprint/iscc-content-text/sources"
-FORBIDDEN_KEYS = {"grounded", "grounding", "entitlement", "licensed", "owner", "authored", "true", "verified_use"}
 
 
 def _record():
@@ -18,13 +17,31 @@ def test_proposition_is_similarity_only():
     assert _record()["proposition"] == verify.PROPOSITION == "similarity_only"
 
 
-def test_record_carries_no_grounding_or_entitlement_claims():
+def test_record_carries_no_verdict_or_claim_keys():
     def keys(d):
         for k, v in d.items():
             yield k
             if isinstance(v, dict):
                 yield from keys(v)
-    assert not FORBIDDEN_KEYS & set(keys(_record()))
+    assert not verify.FORBIDDEN_CLAIM_KEYS & set(keys(_record()))
+
+
+def test_emitted_record_validates_clean():
+    assert verify.validate_record(_record()) == []
+
+
+def test_foreign_proposition_is_rejected():
+    record = _record()
+    record["proposition"] = "grounding_proof"
+    problems = verify.validate_record(record)
+    assert any("MUST be rejected" in p for p in problems)
+
+
+def test_forbidden_claim_key_is_rejected():
+    record = _record()
+    record["reference"]["entitlement"] = "licensed"
+    problems = verify.validate_record(record)
+    assert any("forbidden claim key 'entitlement'" in p for p in problems)
 
 
 def test_block_mode_reports_unit_ref():

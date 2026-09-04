@@ -4,17 +4,17 @@
 
 **History:** This follows my offer on #18 and the dispositions on #16 and #17. #16 proposed optional `content_iscc` and `excerpt_iscc` fields on the grounding and citation data profiles and was declined as a core change, with content-derived fingerprinting moved to the evidence profile. This issue is the module-level version of that work: nothing here touches the event schema, and the fingerprints that #16 would have placed on the event now live in a verifier-produced evidence record instead. #17 (normative `content_id` scheme resolution) remains a core question and is not reopened here; where this module depends on resolution it says so and treats it as a consumer-policy matter.
 
-**References:** Charter (scope item 1, boundary rule, deliverables and bar); standard issues #16, #17, #18 (disposition of 12 August, four-module consolidation); Content Telemetry 1.0 §4.5 (content identifiers), §6.5 (content hashes), §7.3 (verification of grounding and citation events).
-
-> Note before filing: section numbers above follow the charter and #18. Confirm them against the 1.0 text before posting, as the public main branch still shows the 0.1 numbering.
+**References:** Charter (scope item 1, boundary rule, deliverables and bar); standard issues #16, #17, #18 (disposition of 12 August, four-module consolidation); Content Telemetry 1.0 §4.4 (source roles), §4.5 (content identification), §6.4–6.5 (content and excerpt hashes), §6.8 (evidence references).
 
 ---
 
 ## 1. Motivation and scope
 
-Content Telemetry gives a content owner an agent-reported record of `content_retrieved`, `content_grounded`, `content_cited`, `content_displayed` and `content_engaged`. §7.3 records that only the retrieval stage has an origin-side counterpart the owner can correlate against; the later stages are self-reported. The VPTS module (#18) addresses this forward, by seeding markers before use. This module addresses it backward: given an AI output, a disclosed corpus or a retrieval log, can a consumer establish, to a stated confidence and under a named scheme, that material in it derives from a registered content item, without any cooperation from the reporting agent?
+Content Telemetry gives a content owner an agent-reported record of `content_retrieved`, `content_grounded`, `content_cited`, `content_presented` and `content_engaged`. §4.4 records that grounding, citation and presentation events are reported by the agent only, because they are not observable from the content owner's infrastructure; only the retrieval stage has an origin-side counterpart the owner can correlate against (§7.2). The VPTS module (#18) addresses this forward, by seeding markers before use. This module addresses it backward: given an AI output, a disclosed corpus or a retrieval log, can a consumer establish, to a stated confidence and under a named scheme, that material in it derives from a registered content item, without any cooperation from the reporting agent?
 
 Fingerprint evidence is the only evidence type in the profile that survives the removal of metadata, credentials and markers, and that can be applied to material produced before any telemetry existed. That is also its limit: it says something about content similarity and nothing about how the similarity arose.
+
+The standard's own open-questions list asks for exactly this class of work: "mechanisms that test truthfulness and completeness rather than origin, such as sampled audits or publisher-seeded canary content, are of particular interest." Seeded canary content is the VPTS module (#18); fingerprint matching is the corresponding mechanism for material that was never seeded.
 
 In scope for this module:
 
@@ -80,6 +80,7 @@ A `fingerprint_match` record is produced by a verifier, not by an agent, and is 
   "evidence_type": "fingerprint_match",
   "scheme_id": "iscc-content-text",
   "scheme_version": "1.0",
+  "unit": "block",
   "reference": {
     "content_id": "...",
     "content_url": "...",
@@ -107,7 +108,11 @@ A `fingerprint_match` record is produced by a verifier, not by an agent, and is 
 
 `content_telemetry_id` and `session_id` are OPTIONAL and present only when the candidate came from a telemetry session, so that a match can be joined to the agent's own report. `proposition` is a fixed string that names the bounded proposition in §2; a record with any other value MUST be rejected by conformant verifiers.
 
-A record MAY be signed by the verifier using the manifest key conventions in §8.4 of the standard. Per the boundary rule, signature validity establishes only who asserted the record and when.
+The record deliberately carries `score` and `threshold` but no verdict. Whether a score constitutes a match is the consumer's conclusion under their trust policy (§5), not the verifier's assertion; embedding a verdict in the record would let the record be quoted as a conclusion detached from the threshold that produced it.
+
+Although the record travels outside the event stream, core 1.0 §6.8 defines a `data.evidence` slot on any content event: an array of profile-defined evidence references with `scheme`, `ref` and `digest`, which core does not interpret. This module proposes the convention for its entries: `scheme` is the literal `fingerprint_match`, `ref` is a URI resolving to the record, and `digest` is the SHA-256 of the record's canonical JSON serialisation. This gives a `content_grounded` or `content_cited` event a standard way to point at corroborating fingerprint evidence with no wire-format change.
+
+A record MAY be signed by the verifier. Core 1.0 publishes keys in the manifest (§8.4) but defers signing proof formats — JWS, verifiable credentials — to a later version (§8.9), so the profile, not core, will need to specify the detached-signature format for records; the V2 bar in §6 depends on that profile choice. Per the boundary rule, signature validity establishes only who asserted the record and when.
 
 ## 5. Trust-policy fields
 
@@ -135,18 +140,20 @@ Using the workflow-maturity levels from #18 as a frame:
 
 ## 7. Conformance fixtures
 
-Fixtures live under `fixtures/fingerprint/<scheme_id>/` with a manifest listing each vector, the expected score and the expected verdict under the profile's default threshold. Every scheme MUST ship all five classes:
+Fixtures live under `fixtures/fingerprint/<scheme_id>/` with a manifest listing each vector, the expected score and the expected verdict under the profile's default threshold. Every scheme MUST ship all six classes:
 
 1. **Identical** — candidate equals reference. Positive control.
 2. **Near-duplicate above threshold** — minor edits, reformatting, encoding changes, house-style rewording of a lede.
 3. **Near-duplicate below threshold** — the boundary case, so that two verifiers can be shown to agree on where the line falls.
-3a. **Version and redaction** — a later version of the reference with paragraphs added, removed or redacted, where block-level matches persist while the document-level score moves. This class exists so that the profile can show what "the same article, updated" looks like to each scheme, which is the everyday case for news content.
-4. **Negative, unrelated** — content on the same topic from an unrelated source, chosen to have similar length and vocabulary. Must not match.
-5. **Negative, known defeat** — a transformation from the scheme's `known_defeats` row (paraphrase, translation, heavy excerpting) applied to the reference. Must not match, and the fixture documents that this is expected behaviour rather than a bug.
+4. **Version and redaction** — a later version of the reference with paragraphs added, removed or redacted, where block-level matches persist while the document-level score moves. This class exists so that the profile can show what "the same article, updated" looks like to each scheme, which is the everyday case for news content.
+5. **Negative, unrelated** — content on the same topic from an unrelated source, chosen to have similar length and vocabulary. Must not match.
+6. **Negative, known defeat** — a transformation from the scheme's `known_defeats` row (paraphrase, translation, heavy excerpting) applied to the reference. Must not match, and the fixture documents that this is expected behaviour rather than a bug.
+
+An exact-match scheme (such as `iscc-instance`) has no near-duplicate band; it MAY satisfy the near-duplicate-above class with its identical vector, and the vector's notes MUST say so.
 
 Fixture source material will be public-domain or CC-licensed text and audio so that the repository stays clean-checkout reproducible; the manifest records the licence per vector. ObraVera's existing block-level, version-handling and redaction fixtures will be re-based onto that material and contributed with the first pull request alongside the `iscc-content-text` and `iscc-data` vectors; `winnowing-text` and `iscc-content-audio` follow in a second.
 
-A runner (`python -m verify fixtures/fingerprint`) recomputes every fingerprint from the source material, compares against the manifest, and fails on any divergence. This is deliberately stricter than checking stored fingerprints, because the recomputation is what gives the evidence its value.
+A runner (`spur-fingerprint-verifier fixtures fixtures/fingerprint`) recomputes every fingerprint from the source material, compares against the manifest, and fails on any divergence. This is deliberately stricter than checking stored fingerprints, because the recomputation is what gives the evidence its value.
 
 ## 8. Reference verifiers
 
@@ -162,7 +169,7 @@ I will publish a first verifier (Python, `iscc-core` and a small winnowing imple
 ## 10. Open questions for the group
 
 1. Should `threshold` defaults be normative (MUST) or recommended (SHOULD) in the profile? My instinct is SHOULD with a documented rationale, leaving consumers free to tighten.
-2. Does the group want `fingerprint_match` records to be carried in an existing container (e.g. the audit-ledger receipts VPTS proposes) or left to the consumer? I have kept it container-agnostic to avoid a dependency on any single ledger.
+2. Storage of the record itself stays container-agnostic (consumer evidence store, dispute attachment, or the audit-ledger receipts VPTS proposes), and core §6.8 already provides the event-side reference slot. Does the group accept the `data.evidence` convention proposed in §4 (`scheme` = `fingerprint_match`, `ref` = record URI, `digest` = SHA-256 of the canonical record), or prefer a different entry shape?
 3. Block-level identifiers: §4.5 defines `content_id` at document level. Block-level matching needs a `unit_ref` convention. I have used a free-form string above; if the group prefers a structured form I will follow whatever the recomputable-attribution module adopts.
 4. Registry resolution: a verifier needs to fetch the reference content (or a stored fingerprint) for a `content_id` in order to recompute. #17 asked for this to be normative in core and is still open. For the module I propose that `reference.registrar` names the resolving registry and that resolution method is a trust-policy choice, so the module works whether or not #17 is adopted. If the group would rather the profile define a resolution record, I can draft one.
 

@@ -17,6 +17,11 @@ from . import schemes
 
 PROPOSITION = "similarity_only"
 VERDICTS = ("match", "no_match")
+# Keys that would turn a similarity record into a grounding, entitlement or
+# truth claim. The boundary rule forbids them anywhere in a record.
+FORBIDDEN_CLAIM_KEYS = frozenset(
+    {"verdict", "grounded", "grounding", "entitlement", "licensed", "owner", "authored", "true", "verified_use"}
+)
 FIXTURE_CLASSES = (
     "identical",
     "near_duplicate_above",
@@ -53,7 +58,12 @@ class MatchResult:
         return "match" if self.score >= self.threshold else "no_match"
 
     def record(self, reference: dict, candidate: dict) -> dict:
-        """A fingerprint_match evidence record as proposed for the profile."""
+        """A fingerprint_match evidence record as proposed for the profile.
+
+        The record carries score and threshold but no verdict; the verdict is
+        the consumer's conclusion under their trust policy, not the verifier's
+        assertion.
+        """
         return {
             "evidence_type": "fingerprint_match",
             "scheme_id": self.scheme_id,
@@ -67,7 +77,6 @@ class MatchResult:
             },
             "score": self.score,
             "threshold": self.threshold,
-            "verdict": self.verdict,
             "verifier": {
                 "implementation": "spur-fingerprint-verifier",
                 "version": _VERSION,
@@ -75,6 +84,36 @@ class MatchResult:
             },
             "proposition": PROPOSITION,
         }
+
+
+def validate_record(record: dict) -> list[str]:
+    """Check a fingerprint_match record against the module's requirements.
+
+    Returns a list of problems; an empty list means the record is acceptable.
+    A conformant verifier MUST reject a record whose proposition is anything
+    other than similarity_only, and the boundary rule forbids keys that read
+    as grounding, entitlement or truth claims.
+    """
+    problems: list[str] = []
+    if record.get("evidence_type") != "fingerprint_match":
+        problems.append(f"evidence_type is {record.get('evidence_type')!r}, expected 'fingerprint_match'")
+    if record.get("proposition") != PROPOSITION:
+        problems.append(f"proposition is {record.get('proposition')!r}, expected {PROPOSITION!r}; record MUST be rejected")
+    if record.get("scheme_id") not in schemes.REGISTRY:
+        problems.append(f"unknown scheme_id {record.get('scheme_id')!r}")
+    for field_name in ("score", "threshold"):
+        if not isinstance(record.get(field_name), (int, float)):
+            problems.append(f"{field_name} is missing or not numeric")
+
+    def keys(d: dict):
+        for k, v in d.items():
+            yield k
+            if isinstance(v, dict):
+                yield from keys(v)
+
+    for k in sorted(FORBIDDEN_CLAIM_KEYS & set(keys(record))):
+        problems.append(f"record carries forbidden claim key {k!r}")
+    return problems
 
 
 def match(
